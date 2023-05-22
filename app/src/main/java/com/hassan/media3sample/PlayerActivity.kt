@@ -1,22 +1,31 @@
 package com.hassan.media3sample
 
 import android.annotation.SuppressLint
-import androidx.media3.common.MediaItem
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.Player
+import androidx.media3.common.util.Log
 import androidx.media3.common.util.Util
+import androidx.media3.datasource.DataSource
+import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.hls.HlsMediaSource
 import com.hassan.media3sample.databinding.ActivityPlayerBinding
+
 
 class PlayerActivity: AppCompatActivity() {
 
-    private var player: ExoPlayer? = null
+    private var player: Player? = null
     private var playWhenReady = true
     private var mediaItemIndex = 0
     private var playbackPosition = 0L
+    private val playbackStateListener: Player.Listener = playbackStateListener()
+
 
     private val viewBinding by lazy(LazyThreadSafetyMode.NONE) {
         ActivityPlayerBinding.inflate(layoutInflater)
@@ -28,6 +37,7 @@ class PlayerActivity: AppCompatActivity() {
     }
 
 
+    @SuppressLint("UnsafeOptInUsageError")
     override fun onResume() {
         super.onResume()
         hideSystemUi()
@@ -36,6 +46,7 @@ class PlayerActivity: AppCompatActivity() {
         }
     }
 
+    @SuppressLint("UnsafeOptInUsageError")
     override fun onPause() {
         super.onPause()
         if (Util.SDK_INT <= 23) {
@@ -48,24 +59,40 @@ class PlayerActivity: AppCompatActivity() {
             playbackPosition = exoPlayer.currentPosition
             mediaItemIndex = exoPlayer.currentMediaItemIndex
             playWhenReady = exoPlayer.playWhenReady
+            exoPlayer.removeListener(playbackStateListener)
             exoPlayer.release()
         }
         player = null
     }
 
+    @SuppressLint("UnsafeOptInUsageError")
     private fun initializePlayer() {
         player = ExoPlayer.Builder(this)
             .build()
             .also { exoPlayer ->
                 viewBinding.videoView.player = exoPlayer
-                val mediaItem = MediaItem.fromUri(getString(R.string.media_url_mp4))
-//                exoPlayer.setMediaItem(mediaItem)
-                exoPlayer.setMediaItems(listOf(mediaItem), mediaItemIndex, playbackPosition)
+                exoPlayer.trackSelectionParameters = exoPlayer.trackSelectionParameters
+                    .buildUpon()
+                    .setMaxVideoSizeSd()
+                    .build()
+                /* val mediaItem = MediaItem.fromUri(getString(R.string.media_url_mp4)) */
+                val mediaItem = MediaItem.Builder()
+                    .setUri(getString(R.string.media_url_hls))
+                    .setMimeType(MimeTypes.APPLICATION_M3U8)
+                    .build()
+
+                val dataSourceFactory = DefaultHttpDataSource.Factory()
+                val hlsMediaSource = HlsMediaSource.Factory(dataSourceFactory)
+                    .createMediaSource(mediaItem)
+//                exoPlayer.setMediaItems(listOf(mediaItem), mediaItemIndex, playbackPosition)
+                exoPlayer.setMediaSource(hlsMediaSource)
                 exoPlayer.playWhenReady = playWhenReady
+                exoPlayer.addListener(playbackStateListener)
                 exoPlayer.prepare()
 
             }
     }
+
 
     @SuppressLint("InlinedApi")
     private fun hideSystemUi() {
@@ -76,4 +103,22 @@ class PlayerActivity: AppCompatActivity() {
         }
     }
 
+    companion object {
+        const val TAG = "PlayerActivity"
+    }
+
+}
+
+private fun playbackStateListener() = object : Player.Listener {
+    @SuppressLint("UnsafeOptInUsageError")
+    override fun onPlaybackStateChanged(playbackState: Int) {
+        val stateString: String = when (playbackState) {
+            ExoPlayer.STATE_IDLE -> "ExoPlayer.STATE_IDLE      -"
+            ExoPlayer.STATE_BUFFERING -> "ExoPlayer.STATE_BUFFERING -"
+            ExoPlayer.STATE_READY -> "ExoPlayer.STATE_READY     -"
+            ExoPlayer.STATE_ENDED -> "ExoPlayer.STATE_ENDED     -"
+            else -> "UNKNOWN_STATE             -"
+        }
+        Log.d(PlayerActivity.TAG, "changed state to $stateString")
+    }
 }

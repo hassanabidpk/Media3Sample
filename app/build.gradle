@@ -60,11 +60,11 @@ dependencies {
     implementation 'androidx.compose.ui:ui-graphics'
     implementation 'androidx.compose.ui:ui-tooling-preview'
     implementation 'androidx.compose.material3:material3'
-    // exoplayer
-    implementation "androidx.media3:media3-exoplayer:$mediaVersion"
-    implementation "androidx.media3:media3-ui:$mediaVersion"
-    implementation "androidx.media3:media3-exoplayer-dash:$mediaVersion"
-    implementation "androidx.media3:media3-exoplayer-hls:$mediaVersion"
+        // exoplayer
+        implementation "androidx.media3:media3-exoplayer:$mediaVersion"
+        implementation "androidx.media3:media3-ui:$mediaVersion"
+        implementation "androidx.media3:media3-exoplayer-dash:$mediaVersion"
+        implementation "androidx.media3:media3-exoplayer-hls:$mediaVersion"
 
 
     testImplementation 'junit:junit:4.13.2'

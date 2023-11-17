@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace 'com.hassan.media3sample'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.hassan.media3sample"
         minSdk 24
-        targetSdk 33
+        targetSdk 34
         versionCode 1
         versionName "1.0"
 
@@ -45,9 +45,10 @@ android {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
         }
     }
+    ndkVersion '22.1.7171670'
 }
 
-def mediaVersion = "1.0.2"
+def mediaVersion = "1.2.0"
 
 dependencies {
 
@@ -65,7 +66,13 @@ dependencies {
     implementation "androidx.media3:media3-ui:$mediaVersion"
     implementation "androidx.media3:media3-exoplayer-dash:$mediaVersion"
     implementation "androidx.media3:media3-exoplayer-hls:$mediaVersion"
+    implementation 'com.google.android.material:material:1.8.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 
+    // transformer
+    implementation "androidx.media3:media3-transformer:$mediaVersion"
+    implementation "androidx.media3:media3-effect:$mediaVersion"
+    implementation "androidx.media3:media3-common:$mediaVersion"
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'

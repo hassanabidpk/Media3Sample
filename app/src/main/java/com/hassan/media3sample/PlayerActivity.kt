@@ -75,7 +75,6 @@ class PlayerActivity: AppCompatActivity() {
                     .buildUpon()
                     .setMaxVideoSizeSd()
                     .build()
-                /* val mediaItem = MediaItem.fromUri(getString(R.string.media_url_mp4)) */
                 val mediaItem = MediaItem.Builder()
                     .setUri(getString(R.string.media_url_hls))
                     .setMimeType(MimeTypes.APPLICATION_M3U8)
@@ -84,7 +83,6 @@ class PlayerActivity: AppCompatActivity() {
                 val dataSourceFactory = DefaultHttpDataSource.Factory()
                 val hlsMediaSource = HlsMediaSource.Factory(dataSourceFactory)
                     .createMediaSource(mediaItem)
-//                exoPlayer.setMediaItems(listOf(mediaItem), mediaItemIndex, playbackPosition)
                 exoPlayer.setMediaSource(hlsMediaSource)
                 exoPlayer.playWhenReady = playWhenReady
                 exoPlayer.addListener(playbackStateListener)

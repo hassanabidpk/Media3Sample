@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools">
     <!-- <uses-permission android:name="android.permission.INTERNET" /> -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
         android:allowBackup="true"
@@ -15,22 +17,26 @@
         android:theme="@style/Theme.Media3Sample"
         tools:targetApi="31">
         <activity
-            android:name=".TransformerActivity"
+            android:name=".FFmpegActivity"
             android:exported="false" />
+        <activity
+            android:name=".TransformerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Media3Sample" />
         <activity
             android:name=".PlayerActivity"
             android:exported="true"
-            android:theme="@style/Theme.AppCompat.NoActionBar">
+            android:theme="@style/Theme.Media3Sample" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Media3Sample">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".MainActivity"
-            android:exported="true"
-            android:theme="@style/Theme.Media3Sample" />
     </application>
 
 </manifest>

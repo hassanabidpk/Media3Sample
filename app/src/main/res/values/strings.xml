@@ -6,13 +6,14 @@
     <string name="media_url_hls">https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8</string>
     <string name="media_url_dash"><![CDATA[https://www.youtube.com/api/manifest/dash/id/bf5bb2419360daf1/source/youtube?as=fmp4_audio_clear,fmp4_sd_hd_clear&sparams=ip,ipbits,expire,source,id,as&ip=0.0.0.0&ipbits=0&expire=19000000000&signature=51AF5F39AB0CEC3E5497CD9C900EBFEAECCCB5C7.8506521BFC350652163895D4C26DEE124209AA9E&key=ik0]]></string>
     <string name="permission_denied">Permission Denied</string>
-    <string name="select_local_file_button" translatable="false">Choose local file</string>
+    <string name="select_local_file_button" translatable="false">Choose video file</string>
     <string name="configuration" translatable="false">Configuration</string>
     <string name="local_file_picker_failed">File couldn\'t be opened. Please try again.</string>
     <string name="select_transcoding_button" translatable="false">Start Transcoding</string>
     <string name="select_video_effects" translatable="false">Add video effects</string>
     <string name="preview_exoplayer" translatable="false">Preview ExoPlayer</string>
     <string name="export" translatable="false">Export</string>
+    <string name="title_activity_gen_aiactivity">GenAIActivity</string>
 
 
 </resources>

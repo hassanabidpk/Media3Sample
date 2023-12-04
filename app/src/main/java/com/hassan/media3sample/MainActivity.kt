@@ -37,6 +37,8 @@ class MainActivity : AppCompatActivity() {
                         LaunchFFmpeg()
                         Spacer(modifier = Modifier.height(16.dp))
                         LaunchPlayer()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        LaunchGenAI()
                     }
 
                 }
@@ -57,6 +59,11 @@ class MainActivity : AppCompatActivity() {
     }
     fun launchPlayerActivity() {
         val intent = Intent(this, PlayerActivity::class.java)
+        startActivity(intent)
+
+    }
+    fun launchGenAIActivity() {
+        val intent = Intent(this, GenAIActivity::class.java)
         startActivity(intent)
 
     }
@@ -92,15 +99,25 @@ class MainActivity : AppCompatActivity() {
     }
 
         @Composable
-        fun LaunchFFmpeg() {
-            Column(modifier = Modifier.padding(2.dp)) {
-                val button = Button(onClick = {
-                    launchFFMpegActivity()
-                }) {
-                    Text("Launch FFMPEG Activity")
-                }
+    fun LaunchFFmpeg() {
+        Column(modifier = Modifier.padding(2.dp)) {
+            val button = Button(onClick = {
+                launchFFMpegActivity()
+            }) {
+                Text("Launch FFMPEG Activity")
             }
         }
+    }
+    @Composable
+    fun LaunchGenAI() {
+        Column(modifier = Modifier.padding(2.dp)) {
+            val button = Button(onClick = {
+                launchGenAIActivity()
+            }) {
+                Text("Launch Gen AI Activity")
+            }
+        }
+    }
 
     @Preview(showBackground = true)
     @Composable
@@ -109,6 +126,7 @@ class MainActivity : AppCompatActivity() {
             Greeting("DevFest 2023 Singapore attendees")
             LaunchTransform()
             LaunchFFmpeg()
+            LaunchGenAI()
         }
     }
 

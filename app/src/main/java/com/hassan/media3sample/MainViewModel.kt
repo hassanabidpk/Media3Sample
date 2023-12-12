@@ -61,7 +61,9 @@ class MainViewModel : ViewModel() {
     val exampleQuestions : String = "Question: Add Text Overlay with text = \"Hello DevFest KL\" and color = green\n" +
             "Answer : applyTextOverlay(\"Hello DevFest KL\", \"green\")\n" +
             "Question : transcode Video to h.265\n" +
-            "Answer: transcodeVideotoH265 \n"
+            "Answer: transcodeVideotoH265 \n" +
+            "Question : Apply bitmap overlay with GDG KL Dino image\n" +
+            "Answer: applyBitmapOverlay(\"gdg_kl_dino_image\")\n"
 
     val messages: StateFlow<List<Message>>
         get() = _messages

@@ -59,6 +59,7 @@ class PalmViewModel : ViewModel() {
             "3. Remove audio : Return function name removeAudio\n" +
             "4. transcode video to h.264 : Return fuction name transcodeVideotoH264\n" +
             "5. Add Text Overlay with text = \"Hello DevFest KL\" and color = \"green\" : Return function applyTextOverLay(\"Hello DevFest KL\", \"green\")\n" +
+            "5. Add Image or Bitmap Overlay with Dino image : Return function applyBitmapOverLay(\"dino_image\")\n" +
             "\n" +
             "notes : \n" +
             "1. Reply function name without colon\n" +
@@ -68,7 +69,9 @@ class PalmViewModel : ViewModel() {
     val exampleQuestions : String = "Question: Add Text Overlay with text = \"Hello DevFest KL\" and color = green\n" +
             "Answer : applyTextOverlay(\"Hello DevFest KL\", \"green\")\n" +
             "Question : transcode Video to h.265\n" +
-            "Answer: transcodeVideotoH265 \n"
+            "Answer: transcodeVideotoH265 \n" +
+            "Question : Add image or Bitmap overlay with Dino image\n" +
+            "Answer: applyBitmapOverlay(\"dino_image\")\n"
 
     val messages: StateFlow<List<Message>>
         get() = _messages
@@ -145,34 +148,44 @@ class PalmViewModel : ViewModel() {
             try {
                 val response = client.generateText(request)
                 val returnedText = response.candidatesList.last()
-                if(returnedText.output.contains("rotateVideo", true)) {
-                    val parameter = extractParameter(returnedText.output)
-                    val degreesInFloat = parameter?.toFloat()
-                    _floatData.update {  degreesInFloat!! }
-                    Log.d(TAG, "returnedMessage(rotateVideo): ${returnedText.output}} | parameter : " +
-                            "$degreesInFloat of type ${degreesInFloat!!::class}")
-                    /*  withContext(Dispatchers.Main) {
-                             rotateParamLiveData.value = degreesInFloat
-                         }*/
-
-                } else if (returnedText.output.contains("applyTextOverlay", true)) {
-                    val parameter = extractParameterForOverlay(returnedText.output)
-                    val extractedOverlayText = parameter?.toString()
-                    Log.d(TAG, "returnedMessage(applyTextOverlay): ${returnedText.output}} | parameter : " +
-                            "$extractedOverlayText of type ${extractedOverlayText!!::class}")
-                    if(extractedOverlayText != null && extractedOverlayText.isNotBlank())
-                        _textOverlay.update { extractedOverlayText!! }
-                } else if (returnedText.output.contains("trimVideo", true)) {
-                    val parameter = extractIntParamsFromFunction(returnedText.output)
-                    val trimSecondsList = parameter
-                    Log.d(TAG, "returnedMessage(trimVideo): ${returnedText.output}} | parameter : " +
-                            "$trimSecondsList of type ${trimSecondsList!!::class}")
-                    if(!trimSecondsList.isNullOrEmpty())
-                        _trimSecondsList.update { trimSecondsList }
-                }
-                else {
-                    Log.d(TAG, "returnedMessage : ${returnedText.output}} for other cases"
-                    )
+                when {
+                    returnedText.output.contains("rotateVideo", true) -> {
+                        val parameter = extractParameter(returnedText.output)
+                        val degreesInFloat = parameter?.toFloat()
+                        _floatData.update {  degreesInFloat!! }
+                        Log.d(TAG, "returnedMessage(rotateVideo): ${returnedText.output}} | parameter : " +
+                                "$degreesInFloat of type ${degreesInFloat!!::class}")
+                        /*  withContext(Dispatchers.Main) {
+                                 rotateParamLiveData.value = degreesInFloat
+                             }*/
+                    }
+                    returnedText.output.contains("applyTextOverlay", true)-> {
+                        val parameter = extractParameterForOverlay(returnedText.output)
+                        val extractedOverlayText = parameter?.toString()
+                        Log.d(TAG, "returnedMessage(applyTextOverlay): ${returnedText.output}} | parameter : " +
+                                "$extractedOverlayText of type ${extractedOverlayText!!::class}")
+                        if(extractedOverlayText != null && extractedOverlayText.isNotBlank())
+                            _textOverlay.update { extractedOverlayText!! }
+                    }
+                    returnedText.output.contains("applyBitmapOverlay", true)-> {
+                        val parameter = extractParameterForBitmapOverlay(returnedText.output)
+                        val extractedOverlayText = parameter?.toString()
+                        Log.d(TAG, "returnedMessage(applyTextOverlay): ${returnedText.output}} | parameter : " +
+                                "$extractedOverlayText of type ${extractedOverlayText!!::class}")
+                        if(extractedOverlayText != null && extractedOverlayText.isNotBlank())
+                            _textOverlay.update { extractedOverlayText!! }
+                    }
+                    returnedText.output.contains("trimVideo", true) -> {
+                        val parameter = extractIntParamsFromFunction(returnedText.output)
+                        val trimSecondsList = parameter
+                        Log.d(TAG, "returnedMessage(trimVideo): ${returnedText.output}} | parameter : " +
+                                "$trimSecondsList of type ${trimSecondsList!!::class}")
+                        if(!trimSecondsList.isNullOrEmpty())
+                            _trimSecondsList.update { trimSecondsList }
+                    }
+                    else -> {
+                        Log.d(TAG, "returnedMessage : ${returnedText.output}} for other cases")
+                    }
                 }
                 // display the returned text in the UI
                 _output.update { returnedText.output }
@@ -191,6 +204,11 @@ class PalmViewModel : ViewModel() {
     }
     fun extractParameterForOverlay(input: String): String? {
         val pattern = "applyTextOverlay\\((.*?)\\)".toRegex()
+        val matchResult = pattern.find(input)
+        return matchResult?.groups?.get(1)?.value
+    }
+    fun extractParameterForBitmapOverlay(input: String): String? {
+        val pattern = "applyBitmapOverlay\\((.*?)\\)".toRegex()
         val matchResult = pattern.find(input)
         return matchResult?.groups?.get(1)?.value
     }

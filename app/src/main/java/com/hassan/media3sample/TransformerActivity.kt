@@ -1,17 +1,18 @@
 package com.hassan.media3sample
 
+import android.Manifest
 import android.Manifest.permission
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.Cursor
-import android.graphics.Color
 import android.graphics.Matrix
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.os.Handler
-import android.provider.ContactsContract.Directory
+import android.os.SystemClock
 import android.provider.MediaStore
 import android.text.Spannable
 import android.text.SpannableString
@@ -27,9 +28,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.material3.TextField
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -54,6 +55,7 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
+import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -63,6 +65,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.Assertions
 import androidx.media3.common.util.Clock
 import androidx.media3.common.util.Util
+import androidx.media3.effect.BitmapOverlay
 import androidx.media3.effect.MatrixTransformation
 import androidx.media3.effect.OverlayEffect
 import androidx.media3.effect.OverlaySettings
@@ -80,11 +83,16 @@ import androidx.media3.transformer.ProgressHolder
 import androidx.media3.transformer.TransformationRequest
 import androidx.media3.transformer.Transformer
 import androidx.media3.transformer.Transformer.ProgressState
+import androidx.media3.ui.PlayerView
+import com.google.common.base.Stopwatch
+import com.google.common.base.Ticker
 import com.google.common.collect.ImmutableList
 import com.hassan.media3sample.databinding.ActivityTransformerBinding
 import com.hassan.media3sample.ui.theme.LLMSampleTheme
+import org.checkerframework.checker.nullness.qual.MonotonicNonNull
 import java.io.File
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 import kotlin.math.min
 
 
@@ -102,6 +110,7 @@ class TransformerActivity : AppCompatActivity() {
     private var outputFile: File? = null
     private val oldOutputFile: File? = null
     private var outputFilePath: String? = null
+    private var exportStopwatch: Stopwatch? = null
 
     private var player: Player? = null
     private var playWhenReady = true
@@ -131,13 +140,21 @@ class TransformerActivity : AppCompatActivity() {
                     ) {
                         PaLMUi(
                             onRotateAction = { degrees -> rotateVideo(degrees) } ,
-                            onApplyTextOverlay = { degrees -> applyTextOverlayEffect(degrees, Color.GREEN) },
+//                            onApplyTextOverlay = { degrees -> applyTextOverlayEffect(degrees, Color.GREEN) },
+                            onApplyTextOverlay = {degrees -> applyBitmapOverlayEffect("content://media/picker/0/com.android.providers.media.photopicker/media/1000000150")},
                             onTrimVideoAction = { trimList -> trimVideo((trimList.get(0)*1000).toLong(), (trimList.get(1)*1000).toLong())}
                         )
                     }
                 }
             }
         }
+
+        // add the storage access permission request for Android 9 and below.
+/*        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+            val permissionList = PERMISSIONS_REQUIRED.toMutableList()
+            permissionList.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            PERMISSIONS_REQUIRED = permissionList.toTypedArray()
+        }*/
 
         videoLocalFilePickerLauncher = registerForActivityResult<Intent, ActivityResult>(
             ActivityResultContracts.StartActivityForResult()
@@ -151,8 +168,8 @@ class TransformerActivity : AppCompatActivity() {
 
         try {
             outputFile =
-                createExternalCacheFile("transformer-output-" + Clock.DEFAULT.elapsedRealtime() + ".mp4")
-//                createExternalDirectoryFile("transformer-output-" + Clock.DEFAULT.elapsedRealtime() + ".mp4")
+               /* createExternalCacheFile("transformer-output-" + Clock.DEFAULT.elapsedRealtime() + ".mp4")*/
+                createExternalDirectoryFile("transformer-output-" + Clock.DEFAULT.elapsedRealtime() + ".mp4")
         } catch (e: IOException) {
             throw IllegalStateException(e)
         }
@@ -168,20 +185,25 @@ class TransformerActivity : AppCompatActivity() {
             )
         }
 
-        viewBinding.selectTranscodingButton.setOnClickListener{
+        viewBinding.shareVideo.setOnClickListener{
 
-//            applyTextOverlayEffect(1f, "DevFest Singapore 2023", Color.GREEN)
-            callEditFunctionByName( "rotateVideo", 90f)
+            /*callEditFunctionByName( "rotateVideo", 90f)*/
+            val type = "video/*"
+            createInstagramIntent(type, outputFilePath!!)
 
         }
 
-        val myObject = MyClass()
-        callFunctionByName(myObject, "myFunction")
+        exportStopwatch = Stopwatch.createUnstarted(
+            object : Ticker() {
+                override fun read(): Long {
+                    return SystemClock.elapsedRealtimeNanos()
+                }
+            })
 
     }
 
     @SuppressLint("UnsafeOptInUsageError")
-    fun startTranscodeTransformer(outputFilePath: String) {
+    fun transcodeToH264(outputFilePath: String) {
         val inputMediaItem = MediaItem.fromUri(localFileUri!!)
 
         TransformationRequest.Builder()
@@ -190,7 +212,7 @@ class TransformerActivity : AppCompatActivity() {
             .build()
         val editedMediaItem = EditedMediaItem.Builder(inputMediaItem).setRemoveAudio(true).build()
         val transformer = Transformer.Builder(this)
-            .setVideoMimeType(MimeTypes.VIDEO_H265)
+            .setVideoMimeType(MimeTypes.VIDEO_H264)
             .setAudioMimeType(MimeTypes.AUDIO_AAC)
             .addListener(transformerListener)
             .build()
@@ -204,6 +226,13 @@ class TransformerActivity : AppCompatActivity() {
 
             override fun onCompleted(composition: Composition, result: ExportResult) {
                 Log.d(TAG, "Transformer output file path : \"file://$outputFile\")")
+                exportStopwatch!!.stop()
+                viewBinding.informationTextView.setText(
+                    getString(
+                        R.string.export_completed,
+                        exportStopwatch!!.elapsed(TimeUnit.MILLISECONDS) / 1000f)
+                )
+                viewBinding.progressIndicator.visibility = View.GONE
                 playOutPutMediaItem(
                     MediaItem.fromUri("file://$outputFile"))
                     Toast.makeText(
@@ -216,35 +245,42 @@ class TransformerActivity : AppCompatActivity() {
 
             override fun onError(composition: Composition, result: ExportResult,
                                  exception: ExportException) {
-//                displayError(exception)
                 Log.d(TAG, "Transformer exception :${exception.toString()}")
+                exportStopwatch!!.stop()
+                viewBinding.informationTextView.setText(R.string.export_error)
+                viewBinding.progressIndicator.setVisibility(View.GONE)
+                Toast.makeText(
+                    applicationContext,
+                    "Export error: $exception",
+                    Toast.LENGTH_LONG
+                )
+                    .show()
             }
         }
 
     fun updateProgress(transformer: Transformer) {
         val progressHolder = ProgressHolder()
+        val progressBar =  viewBinding.progressIndicator
+        val informationTextView = viewBinding.informationTextView
+        exportStopwatch!!.reset()
+        exportStopwatch!!.start()
+        progressBar.visibility = View.VISIBLE
         val mainHandler = Handler(mainLooper)
         mainHandler.post(
             object : Runnable {
                 override fun run() {
                     val progressState: @ProgressState Int = transformer.getProgress(progressHolder)
-                    updateProgressInUi(progressState, progressHolder)
-                    if (progressState != Transformer.PROGRESS_STATE_NOT_STARTED) {
-                        mainHandler.postDelayed(/* r= */this,  /* delayMillis= */50)
+                    if (progressState != Transformer.PROGRESS_STATE_NOT_STARTED && transformer != null) {
+                        progressBar.progress = progressHolder.progress
+                        informationTextView.text = getString(R.string.export_timer,
+                            exportStopwatch!!.elapsed(TimeUnit.SECONDS))
+                        mainHandler.postDelayed(/* r= */this,  /* delayMillis= */500)
                     }
                 }
             }
         )
 
     }
-
-    fun updateProgressInUi(progressState: Int, progressHolder: ProgressHolder) {
-        val progressBar =  viewBinding.determinateProgressBar
-        progressBar.visibility = View.VISIBLE
-        progressBar.progress = progressState
-
-    }
-
 
     fun rotateVideo (degree: Float) {
         Log.d(TAG, "called rotateVideo with $degree rotation")
@@ -288,6 +324,7 @@ class TransformerActivity : AppCompatActivity() {
             .addListener(transformerListener)
             .build()
         transformer.start(editedMediaItemWithScale, outputFilePath!!)
+        updateProgress(transformer)
     }
 
     fun trimVideo(start: Long, end: Long) {
@@ -331,7 +368,8 @@ class TransformerActivity : AppCompatActivity() {
             .setAudioMimeType(MimeTypes.AUDIO_AAC)
             .addListener(transformerListener)
             .build()
-        transformer.start(editedMediaItemWithScale, "path_to_output_file")
+        transformer.start(editedMediaItemWithScale, outputFilePath!!)
+        updateProgress(transformer)
     }
 
     fun applyZoomInEffect(duration: Int) {
@@ -354,7 +392,8 @@ class TransformerActivity : AppCompatActivity() {
             .setAudioMimeType(MimeTypes.AUDIO_AAC)
             .addListener(transformerListener)
             .build()
-        transformer.start(editedMediaItemWithScale, "path_to_output_file")
+        transformer.start(editedMediaItemWithScale, outputFilePath!!)
+        updateProgress(transformer)
     }
 
     fun applyTextOverlayEffect(overlayText: String, color: Int) {
@@ -365,7 +404,6 @@ class TransformerActivity : AppCompatActivity() {
                 Toast.LENGTH_LONG
             )
                 .show()
-
             return
         }
 
@@ -376,7 +414,6 @@ class TransformerActivity : AppCompatActivity() {
                 Toast.LENGTH_LONG
             )
                 .show()
-
             return
         }
 
@@ -405,6 +442,57 @@ class TransformerActivity : AppCompatActivity() {
             .addListener(transformerListener)
             .build()
         transformer.start(editedMediaItemWithOverLays, outputFilePath!!)
+        updateProgress(transformer)
+    }
+
+    fun applyBitmapOverlayEffect(bitmapUri: String) {
+
+        Log.d(TAG, "applyBitmapOverlayEffect called with $bitmapUri")
+        val alpha: Float = 0.7f
+        if(localFileUri == null){
+            Toast.makeText(
+                applicationContext, "Select file first",
+                Toast.LENGTH_LONG
+            )
+                .show()
+
+            return
+        }
+
+        if(outputFilePath == null)
+        {
+            Toast.makeText(
+                applicationContext, "Output file path is null",
+                Toast.LENGTH_LONG
+            )
+                .show()
+
+            return
+        }
+
+        val inputMediaItem = MediaItem.fromUri(localFileUri!!)
+        val overlaysBuilder = ImmutableList.Builder<TextureOverlay>()
+        val overlaySettings = OverlaySettings.Builder()
+            .setAlphaScale(alpha) ///* defaultValue= * 1f
+            .build()
+
+        val bitmapOverlay = BitmapOverlay.createStaticBitmapOverlay(
+            this,
+            Uri.parse(bitmapUri),
+            overlaySettings
+        )
+        overlaysBuilder.add(bitmapOverlay)
+        val editedMediaItemWithOverLays = EditedMediaItem.Builder(inputMediaItem)
+            .setEffects(Effects(
+                /* audioProcessors= */ listOf(),
+                /* videoEffects= */ listOf(OverlayEffect(overlaysBuilder.build()))
+            )).build()
+
+        val transformer = Transformer.Builder(this)
+            .addListener(transformerListener)
+            .build()
+        transformer.start(editedMediaItemWithOverLays, outputFilePath!!)
+        updateProgress(transformer)
     }
 
     private fun selectLocalFile(
@@ -579,7 +667,7 @@ class TransformerActivity : AppCompatActivity() {
                 }
                 ExoPlayer.STATE_READY -> {
                     stateString = "ExoPlayer.STATE_READY     -"
-                    viewBinding.determinateProgressBar.visibility = View.GONE
+                    viewBinding.progressIndicator.visibility = View.GONE
                 }
                 ExoPlayer.STATE_ENDED -> {
                     stateString = "ExoPlayer.STATE_ENDED     -"
@@ -590,6 +678,36 @@ class TransformerActivity : AppCompatActivity() {
             }
             androidx.media3.common.util.Log.d(PlayerActivity.TAG, "changed state to $stateString")
         }
+    }
+
+    private fun createInstagramIntent(type: String, mediaPath: String) {
+
+        // Create the new Intent using the 'Send' action.
+        val share = Intent(Intent.ACTION_SEND)
+
+        // Set the MIME type
+        share.setType(type)
+
+        // Create the URI from the media
+        val media = File(mediaPath)
+        val uri = FileProvider.getUriForFile(this, "${this.packageName}.provider", media)
+
+        // Add the URI to the Intent.
+        share.putExtra(Intent.EXTRA_STREAM, uri)
+        share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+
+        // Broadcast the Intent.
+        startActivity(Intent.createChooser(share, "Share to"))
+    }
+
+    override fun onStop() {
+        super.onStop()
+
+        // The stop watch is reset after cancelling the export, in case cancelling causes the stop watch
+        // to be stopped in a transformer callback.
+        Assertions.checkNotNull<@MonotonicNonNull Stopwatch?>(exportStopwatch).reset()
+        Assertions.checkNotNull<@MonotonicNonNull PlayerView?>(viewBinding.outputPlayerView).onPause()
+        releasePlayer()
     }
 }
 
@@ -663,8 +781,9 @@ fun PaLMUi(
             Card(
                 modifier = Modifier
                     .padding(vertical = 2.dp)
-                    .fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    .fillMaxWidth()
+                    .height(36.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(4.dp)

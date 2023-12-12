@@ -39,6 +39,8 @@ class MainActivity : AppCompatActivity() {
                         LaunchPlayer()
                         Spacer(modifier = Modifier.height(16.dp))
                         LaunchGenAI()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        LaunchInstaUI()
                     }
 
                 }
@@ -64,6 +66,12 @@ class MainActivity : AppCompatActivity() {
     }
     fun launchGenAIActivity() {
         val intent = Intent(this, GenAIActivity::class.java)
+        startActivity(intent)
+
+    }
+
+    fun launchCameraActivity() {
+        val intent = Intent(this, CameraMainActivity::class.java)
         startActivity(intent)
 
     }
@@ -118,6 +126,16 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+    @Composable
+    fun LaunchInstaUI() {
+        Column(modifier = Modifier.padding(2.dp)) {
+            val button = Button(onClick = {
+                launchCameraActivity()
+            }) {
+                Text("Launch Devfest Insta App")
+            }
+        }
+    }
 
     @Preview(showBackground = true)
     @Composable
@@ -127,6 +145,7 @@ class MainActivity : AppCompatActivity() {
             LaunchTransform()
             LaunchFFmpeg()
             LaunchGenAI()
+            LaunchInstaUI()
         }
     }
 

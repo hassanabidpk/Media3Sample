@@ -47,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -140,8 +141,8 @@ class TransformerActivity : AppCompatActivity() {
                     ) {
                         PaLMUi(
                             onRotateAction = { degrees -> rotateVideo(degrees) } ,
-//                            onApplyTextOverlay = { degrees -> applyTextOverlayEffect(degrees, Color.GREEN) },
-                            onApplyTextOverlay = {degrees -> applyBitmapOverlayEffect("content://media/picker/0/com.android.providers.media.photopicker/media/1000000150")},
+                            onApplyTextOverlay = { overlayText -> applyTextOverlayEffect(overlayText, android.graphics.Color.GREEN) },
+                            onApplyBitmapOverlay = { bitampUrl -> applyBitmapOverlayEffect("content://media/picker/0/com.android.providers.media.photopicker/media/1000000150")},
                             onTrimVideoAction = { trimList -> trimVideo((trimList.get(0)*1000).toLong(), (trimList.get(1)*1000).toLong())}
                         )
                     }
@@ -226,7 +227,9 @@ class TransformerActivity : AppCompatActivity() {
 
             override fun onCompleted(composition: Composition, result: ExportResult) {
                 Log.d(TAG, "Transformer output file path : \"file://$outputFile\")")
-                exportStopwatch!!.stop()
+                if(exportStopwatch!!.isRunning) {
+                    exportStopwatch!!.stop()
+                }
                 viewBinding.informationTextView.setText(
                     getString(
                         R.string.export_completed,
@@ -305,8 +308,8 @@ class TransformerActivity : AppCompatActivity() {
             .addListener(transformerListener)
             .setVideoMimeType(MimeTypes.VIDEO_H264)
             .build()
-        transformer.start(editedMediaItemWithRotation, outputFilePath!!)
         updateProgress(transformer)
+        transformer.start(editedMediaItemWithRotation, outputFilePath!!)
 
     }
 
@@ -344,8 +347,9 @@ class TransformerActivity : AppCompatActivity() {
             .setAudioMimeType(MimeTypes.AUDIO_AAC)
             .addListener(transformerListener)
             .build()
-        transformer.start(editedMediaItemWithScale, outputFilePath!!)
         updateProgress(transformer)
+        transformer.start(editedMediaItemWithScale, outputFilePath!!)
+
     }
 
     fun applyZoomOutEffect(duration: Int) {
@@ -440,9 +444,11 @@ class TransformerActivity : AppCompatActivity() {
 
         val transformer = Transformer.Builder(this)
             .addListener(transformerListener)
+            .setVideoMimeType(MimeTypes.VIDEO_H264)
+            .setAudioMimeType(MimeTypes.AUDIO_AAC)
             .build()
-        transformer.start(editedMediaItemWithOverLays, outputFilePath!!)
         updateProgress(transformer)
+        transformer.start(editedMediaItemWithOverLays, outputFilePath!!)
     }
 
     fun applyBitmapOverlayEffect(bitmapUri: String) {
@@ -719,6 +725,7 @@ fun PaLMUi(
     palmViewModel: PalmViewModel = viewModel(),
     onRotateAction: (Float) -> Unit = {},
     onApplyTextOverlay: (String) -> Unit = {},
+    onApplyBitmapOverlay: (String) -> Unit = {},
     onTrimVideoAction: (List<Int>) -> Unit = {}
 ) {
     val mediumPadding = dimensionResource(R.dimen.padding_medium)

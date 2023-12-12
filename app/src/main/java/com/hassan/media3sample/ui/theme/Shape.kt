@@ -9,3 +9,9 @@ val Shapes = Shapes(
     medium = RoundedCornerShape(4.dp),
     large = RoundedCornerShape(0.dp)
 )
+
+val JetSnackShapes = androidx.compose.material.Shapes(
+    small = RoundedCornerShape(percent = 50),
+    medium = RoundedCornerShape(20.dp),
+    large = RoundedCornerShape(0.dp)
+)

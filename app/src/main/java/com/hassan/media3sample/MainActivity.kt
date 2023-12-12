@@ -17,13 +17,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.hassan.media3sample.ui.home.Feed
+import com.hassan.media3sample.ui.theme.JetsnackTheme
 import com.hassan.media3sample.ui.theme.Media3SampleTheme
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            Media3SampleTheme {
+/*            Media3SampleTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -44,6 +46,17 @@ class MainActivity : AppCompatActivity() {
                     }
 
                 }
+            }*/
+            JetsnackTheme {
+                Feed(onSnackClick = { },
+                    onNavigateToRoute = { route ->
+                                        if(route.equals("home/camera")) {
+                                            launchCameraActivity()
+                                        } else if(route.equals("home/transformer"))  {
+                                            launchTransformActivity()
+                                        }
+                    },
+                    modifier = Modifier.fillMaxSize())
             }
         }
     }
@@ -140,12 +153,15 @@ class MainActivity : AppCompatActivity() {
     @Preview(showBackground = true)
     @Composable
     fun GreetingPreview() {
-        Media3SampleTheme {
+        /*Media3SampleTheme {
             Greeting("DevFest 2023 Singapore attendees")
             LaunchTransform()
             LaunchFFmpeg()
             LaunchGenAI()
             LaunchInstaUI()
+        }*/
+        JetsnackTheme {
+            Feed(onSnackClick = { }, onNavigateToRoute = {})
         }
     }
 
